@@ -55,6 +55,14 @@ func TestWith_Query(t *testing.T) {
 			want:     "WITH RECURSIVE `cte1` AS (SELECT * FROM `users`),`cte2` AS (SELECT * FROM `users`) SELECT * FROM `cte`",
 			wantArgs: []driver.Value{},
 		},
+		{
+			name: "When Materialized is true, then the CTE should be materialized",
+			operation: func(db *gorm.DB) *gorm.DB {
+				return db.Clauses(With{Materialized: true, CTEs: []CTE{{Name: "cte", Subquery: clause.Expr{SQL: "SELECT * FROM `users` WHERE `name` = ?", Vars: []interface{}{"WinterYukky"}}}}}).Table("cte").Scan(nil)
+			},
+			want:     "WITH `cte` AS MATERIALIZED (SELECT * FROM `users` WHERE `name` = ?) SELECT * FROM `cte`",
+			wantArgs: []driver.Value{"WinterYukky"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
